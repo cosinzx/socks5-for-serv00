@@ -5,6 +5,7 @@
 DOMAIN-SUFFIX,acl4.ssr
 
 # 需要直链的域名
+DOMAIN,douyin.com
 DOMAIN,taobao.com
 DOMAIN,alimama.com
 DOMAIN,alibaba.com
