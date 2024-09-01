@@ -3,14 +3,14 @@ name: Execute SSH Commands
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 0,13 * * *"  # 每天 北京时间 早8点30分 晚9点30分 各运行一次
+    - cron: "30 0,13 * * *"  # 每天北京时间早8点30分和晚9点30分各运行一次
 
 jobs:
   execute-commands:
     runs-on: ubuntu-latest
     steps:
       - name: Set up SSHPass
-        run: sudo apt-get update && sudo apt-get install -y sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass jq
 
       - name: Get ACCOUNTS_JSON
         id: get-accounts
@@ -33,7 +33,7 @@ jobs:
             echo "echo \"Executing for $username@$ssh\"" >> sshpass.sh
             echo "START_TIME=\$(date -u +\"%Y-%m-%d %H:%M:%S\")" >> sshpass.sh
             echo "START_TIME_LOCAL=\$(date +\"%Y-%m-%d %H:%M:%S\")" >> sshpass.sh
-            
+
             # 执行命令并捕获结果
             echo "sshpass -p '$password' ssh -o StrictHostKeyChecking=no '$username@$ssh' 'bash <(curl -s https://raw.githubusercontent.com/cmliu/socks5-for-serv00/main/check_cron.sh)'" >> sshpass.sh
             echo "EXIT_STATUS=\$?" >> sshpass.sh
@@ -45,7 +45,7 @@ jobs:
             echo "  RESULT=\"serv00账号 $username 登录失败，请检查serv00账号和密码是否正确。\"" >> sshpass.sh
             echo "fi" >> sshpass.sh
 
-            # 将结果追加到文件
+            # 将结果追加到结果字符串
             echo "RESULTS=\"\${RESULTS}\n\${RESULT}\"" >> sshpass.sh
           done < <(jq -c '.[]' accounts.json)
 
