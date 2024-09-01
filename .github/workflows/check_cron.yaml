@@ -36,3 +36,12 @@ jobs:
 
       - name: Execute SSH Commands
         run: ./sshpass.sh
+
+      - name: Send Telegram Notification
+        if: always()  # 无论之前的步骤是成功还是失败，都会执行
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_USER_ID: ${{ secrets.TELEGRAM_USER_ID }}
+        run: |
+          MESSAGE="GitHub Actions 执行完成: $(date +'%Y-%m-%d %H:%M:%S')"
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage -d chat_id=${TELEGRAM_USER_ID} -d text="$MESSAGE"
