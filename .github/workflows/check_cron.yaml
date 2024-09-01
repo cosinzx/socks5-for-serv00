@@ -1,7 +1,7 @@
 name: Execute SSH Commands
 
 on:
-  workflow_dispatch: # 手动触发工作流
+  workflow_dispatch:
   schedule:
     - cron: "30 0,13 * * *"  # 每天 北京时间 早8点30分 晚9点30分 各运行一次
 
@@ -18,20 +18,38 @@ jobs:
           echo "$ACCOUNTS_JSON" > accounts.json
         env:
           ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
-        # 从 GitHub Secrets 获取 ACCOUNTS_JSON 变量，并保存到文件 accounts.json
 
       - name: Generate SSH Commands
         id: generate-ssh-commands
         run: |
           echo "#!/bin/bash" > sshpass.sh
+          echo "RESULTS=\"\"" > results.txt  # 初始化结果文件
+
           while IFS= read -r account; do
             username=$(echo "$account" | jq -r '.username')
             password=$(echo "$account" | jq -r '.password')
             ssh=$(echo "$account" | jq -r '.ssh')
 
             echo "echo \"Executing for $username@$ssh\"" >> sshpass.sh
+            echo "START_TIME=\$(date -u +\"%Y-%m-%d %H:%M:%S\")" >> sshpass.sh
+            echo "START_TIME_LOCAL=\$(date +\"%Y-%m-%d %H:%M:%S\")" >> sshpass.sh
+            
+            # 执行命令并捕获结果
             echo "sshpass -p '$password' ssh -o StrictHostKeyChecking=no '$username@$ssh' 'bash <(curl -s https://raw.githubusercontent.com/cmliu/socks5-for-serv00/main/check_cron.sh)'" >> sshpass.sh
+            echo "EXIT_STATUS=\$?" >> sshpass.sh
+
+            # 判断命令是否成功
+            echo "if [ \$EXIT_STATUS -eq 0 ]; then" >> sshpass.sh
+            echo "  RESULT=\"serv00账号 $username 于北京时间 \$START_TIME_LOCAL（UTC时间 \$START_TIME）登录成功！\"" >> sshpass.sh
+            echo "else" >> sshpass.sh
+            echo "  RESULT=\"serv00账号 $username 登录失败，请检查serv00账号和密码是否正确。\"" >> sshpass.sh
+            echo "fi" >> sshpass.sh
+
+            # 将结果追加到文件
+            echo "RESULTS=\"\${RESULTS}\n\${RESULT}\"" >> sshpass.sh
           done < <(jq -c '.[]' accounts.json)
+
+          echo "echo -e \"\$RESULTS\" > results.txt" >> sshpass.sh  # 将所有结果写入文件
           chmod +x sshpass.sh
 
       - name: Execute SSH Commands
@@ -43,5 +61,5 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_USER_ID: ${{ secrets.TELEGRAM_USER_ID }}
         run: |
-          MESSAGE="GitHub Actions 执行完成: $(date +'%Y-%m-%d %H:%M:%S')"
+          MESSAGE="serv00&ct8自动化脚本运行\n$(cat results.txt)"
           curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage -d chat_id=${TELEGRAM_USER_ID} -d text="$MESSAGE"
