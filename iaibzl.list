@@ -9,11 +9,3 @@ DOMAIN,douyin.com
 DOMAIN,taobao.com
 DOMAIN,alimama.com
 DOMAIN,alibaba.com
-# 仅当域名和端口都匹配时才走波兰节点
-DOMAIN-SUFFIX,iaib.synology.me,🅿️ 波兰节点
-DOMAIN-KEYWORD,iaib.synology.me,🅿️ 波兰节点
-DST-PORT,5700,🅿️ 波兰节点
-
-# 仅当 IP 和端口都匹配时才走波兰节点
-IP-CIDR,192.168.10.251/32,🅿️ 波兰节点
-DST-PORT,5700,🅿️ 波兰节点
